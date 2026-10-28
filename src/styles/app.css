@@ -417,8 +417,12 @@ select {
 }
 
 @media print {
+  html,
   body {
     background: #fff;
+    /* Keep branded fills (cover, method chips, callouts) in Save as PDF */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .sidebar,

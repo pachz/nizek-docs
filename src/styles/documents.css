@@ -645,6 +645,13 @@ table.doc-table {
 }
 
 @media print {
+  .doc-root,
+  .doc-page,
+  .doc-page * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   .doc-page {
     margin: 0;
     box-shadow: none;
@@ -652,6 +659,16 @@ table.doc-table {
     height: 297mm;
     min-height: 297mm;
     max-height: 297mm;
+    background: var(--nz-sheet);
+  }
+
+  .doc-page.cover {
+    /* Re-assert cover fills — some engines drop layered backgrounds in print */
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(84, 57, 170, 0.35), transparent 55%),
+      radial-gradient(90% 70% at 0% 100%, rgba(84, 57, 170, 0.22), transparent 50%),
+      linear-gradient(165deg, #0d0e12 0%, #15131f 48%, #1a1430 100%);
+    color: #fff;
   }
 
   .doc-root {
