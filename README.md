@@ -12,10 +12,11 @@ Document generator for **Nizek Startups** — shared design language for quick i
 
 All templates share the same chrome: Nizek mark, “Nizek Startups” lockup, optional dark cover page. Page size is fixed **A4** (`210×297mm`) for preview and print.
 
-## Run
+## Run locally
 
 ```bash
 npm install
+cp .env.example .env.local   # optional: add OPENAI_API_KEY
 npm run dev
 ```
 
@@ -26,7 +27,7 @@ Open the local URL → **Samples** or **Generate**, pick a template, toggle cove
 ### Generate (AI)
 
 1. Open **Generate**, choose a template, write a brief.
-2. If `OPENAI_API_KEY` is set (see `.env.example`), click **Generate with AI**.
+2. If `OPENAI_API_KEY` is set, click **Generate with AI**.
 3. Otherwise **Copy AI prompt** → run in Cursor/ChatGPT/Claude → **Apply JSON**.
 
 System prompt source of truth:
@@ -39,10 +40,33 @@ API:
 - `POST /api/generate/prompt` — assembled system + user messages
 - `POST /api/generate/parse` — validate pasted JSON
 
+## Deploy on Vercel
+
+This repo is ready for Vercel (Vite static UI + serverless `/api/*`).
+
+1. Push to GitHub and import the repo in [Vercel](https://vercel.com/new).
+2. Framework preset: **Vite** (or leave auto-detect). Build uses `npm run build` → `dist`.
+3. Add environment variables (Production + Preview as needed):
+
+| Name | Required | Notes |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | for Generate with AI | Without it, copy-prompt + paste-JSON still works |
+| `OPENAI_BASE_URL` | no | Default `https://api.openai.com/v1` |
+| `OPENAI_MODEL` | no | Default `gpt-4.1-mini` |
+
+4. Deploy. UI is at `/`, APIs at `/api/health`, `/api/generate`, etc.
+
+`vercel.json` sets SPA rewrites and `maxDuration: 60` for generation.
+
+```bash
+npx vercel          # preview
+npx vercel --prod   # production
+```
+
 ## Design tokens
 
 - Purple `#5439AA` · Pink accent `#FF3366` (logo dot) · Ink `#08090A` · Paper `#F7F6FB`
-- Official wordmark SVGs (same assets as tadawi/ebh/aljabri backends): `public/nizek-logo.svg` (ink) and `public/nizek-logo-white.svg` (covers)
+- Official wordmark SVGs: `public/nizek-logo.svg` (ink) and `public/nizek-logo-white.svg` (covers)
 - Display / UI: Outfit · Body: Source Serif 4 · Code: IBM Plex Mono
 
 ## Extending

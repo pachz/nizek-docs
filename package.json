@@ -12,6 +12,7 @@
     "start:api": "tsx server/index.ts"
   },
   "dependencies": {
+    "@vercel/node": "^5.3.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -24,5 +25,8 @@
     "tsx": "^4.19.4",
     "typescript": "~5.8.3",
     "vite": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

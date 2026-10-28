@@ -20,5 +20,5 @@
     "isolatedModules": true
   },
   "include": ["src"],
-  "exclude": ["server"]
+  "exclude": ["server", "api", "dist"]
 }
