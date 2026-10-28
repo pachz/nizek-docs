@@ -19,7 +19,25 @@ npm install
 npm run dev
 ```
 
-Open the local URL, pick a template, toggle the cover page, then **Print / Save PDF**.
+Runs Vite (UI) + the generate API on `:8787` (proxied as `/api`).
+
+Open the local URL → **Samples** or **Generate**, pick a template, toggle cover, then **Print / Save PDF**.
+
+### Generate (AI)
+
+1. Open **Generate**, choose a template, write a brief.
+2. If `OPENAI_API_KEY` is set (see `.env.example`), click **Generate with AI**.
+3. Otherwise **Copy AI prompt** → run in Cursor/ChatGPT/Claude → **Apply JSON**.
+
+System prompt source of truth:
+- `src/generate/systemPrompt.ts`
+- `prompts/NIZEK_DOCS_SYSTEM.md`
+
+API:
+- `GET /api/health`
+- `POST /api/generate` `{ kind, brief, coverEnabled, projectHint?, authorHint? }`
+- `POST /api/generate/prompt` — assembled system + user messages
+- `POST /api/generate/parse` — validate pasted JSON
 
 ## Design tokens
 
@@ -32,4 +50,5 @@ Open the local URL, pick a template, toggle the cover page, then **Print / Save 
 1. Add a type in `src/types/doc.ts`
 2. Add a sample in `src/samples/`
 3. Add a view in `src/templates/`
-4. Wire it in `DocumentRenderer` and `templateOptions`
+4. Update `src/generate/systemPrompt.ts` + `parseDoc.ts`
+5. Wire it in `DocumentRenderer` and `templateOptions`
