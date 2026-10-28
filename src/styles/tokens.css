@@ -1,0 +1,34 @@
+:root {
+  /* Nizek brand */
+  --nz-purple: #5439aa;
+  --nz-purple-deep: #3d2780;
+  --nz-purple-soft: #efeafc;
+  --nz-purple-mid: #7a63c4;
+  --nz-pink: #ff3366;
+  --nz-ink: #08090a;
+  --nz-ink-2: #1c1d21;
+  --nz-ink-3: #3a3c44;
+  --nz-mute: #6b6e78;
+  --nz-line: #e4e2ec;
+  --nz-line-strong: #cfcadf;
+  --nz-paper: #f7f6fb;
+  --nz-sheet: #ffffff;
+  --nz-success: #1f7a4d;
+  --nz-warn: #9a6700;
+  --nz-danger: #b42318;
+  --nz-info: #175cd3;
+
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-body: "Source Serif 4", Georgia, serif;
+  --font-ui: "Outfit", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --page-pad-x: 18mm;
+  --page-pad-y: 16mm;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-soft: 0 18px 50px rgba(8, 9, 10, 0.12);
+}
