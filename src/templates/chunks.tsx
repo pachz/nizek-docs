@@ -14,11 +14,11 @@ function ParamsPart({
   title,
 }: {
   params: ApiParam[];
-  title: string;
+  title?: string;
 }) {
   return (
     <section className="section">
-      <h2 className="section__title">{title}</h2>
+      {title ? <h2 className="section__title">{title}</h2> : null}
       <div className="table-wrap">
         <table className="doc-table">
           <thead>
@@ -117,12 +117,18 @@ function expandEndpoint(
   }
 
   const params = endpoint.params ?? [];
-  const PARAM_BATCH = 4;
+  // Small batches so a params table can split across A4 pages cleanly.
+  const PARAM_BATCH = 3;
   for (let i = 0; i < params.length; i += PARAM_BATCH) {
     const slice = params.slice(i, i + PARAM_BATCH);
-    const title =
-      i === 0 ? "Parameters" : `Parameters · continued`;
-    push(`params-${i}`, <ParamsPart params={slice} title={title} />);
+    // Only the first batch gets a section title — continuations are just rows.
+    push(
+      `params-${i}`,
+      <ParamsPart
+        params={slice}
+        title={i === 0 ? "Parameters" : undefined}
+      />,
+    );
   }
 
   if (endpoint.requestExample) {
@@ -197,18 +203,14 @@ function expandSequence(section: Extract<DocSection, { type: "sequence" }>, keyP
   const chunks: ContentChunk[] = [];
   for (let i = 0; i < steps.length; i += BATCH) {
     const slice = steps.slice(i, i + BATCH);
-    const title =
-      i === 0
-        ? section.title
-        : section.title
-          ? `${section.title} · continued`
-          : undefined;
     chunks.push({
       key: `${keyPrefix}-seq-${i}`,
       hardBreakBefore: i === 0 ? Boolean(section.breakBefore) : false,
       node: (
         <section className="section">
-          {title && <h2 className="section__title">{title}</h2>}
+          {i === 0 && section.title && (
+            <h2 className="section__title">{section.title}</h2>
+          )}
           <ol className="flow-timeline" start={i + 1}>
             {slice.map((step, index) => (
               <li
@@ -246,10 +248,7 @@ function expandQa(section: Extract<DocSection, { type: "qa" }>, keyPrefix: strin
         <SectionBlock
           section={{
             type: "qa",
-            title:
-              i === 0
-                ? section.title
-                : `${section.title ?? "Review Q&A"} · continued`,
+            title: i === 0 ? section.title : "",
             items: slice,
           }}
         />

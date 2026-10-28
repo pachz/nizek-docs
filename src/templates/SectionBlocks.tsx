@@ -278,9 +278,11 @@ function ImpactBlock({ title, items }: { title?: string; items: ImpactRow[] }) {
 }
 
 function QaBlock({ title, items }: { title?: string; items: ChangeQa[] }) {
+  // undefined → default label; "" → omit (continuation chunk)
+  const heading = title === undefined ? "Review Q&A" : title;
   return (
     <section className="section">
-      <h2 className="section__title">{title ?? "Review Q&A"}</h2>
+      {heading ? <h2 className="section__title">{heading}</h2> : null}
       <div className="qa-list">
         {items.map((item) => (
           <div className="qa-item" key={item.question}>
