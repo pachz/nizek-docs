@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleGenerate, type GenerateBody } from "../src/server/handlers";
-import { handleOptions, readBody, sendResult } from "./_lib/vercel";
+import { handleGenerate, type GenerateBody } from "./_lib/handlers.js";
+import { handleOptions, readBody, sendResult } from "./_lib/vercel.js";
 
 export const config = {
   maxDuration: 60,

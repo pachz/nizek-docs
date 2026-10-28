@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleParse, type ParseBody } from "../../src/server/handlers";
-import { handleOptions, readBody, sendResult } from "../_lib/vercel";
+import { handleParse, type ParseBody } from "../_lib/handlers.js";
+import { handleOptions, readBody, sendResult } from "../_lib/vercel.js";
+
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res)) return;

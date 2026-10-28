@@ -10,8 +10,17 @@
     }
   ],
   "functions": {
+    "api/health.ts": {
+      "maxDuration": 10
+    },
     "api/generate.ts": {
       "maxDuration": 60
+    },
+    "api/generate/prompt.ts": {
+      "maxDuration": 10
+    },
+    "api/generate/parse.ts": {
+      "maxDuration": 10
     }
   }
 }

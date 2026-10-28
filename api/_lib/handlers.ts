@@ -1,6 +1,6 @@
-import { buildGenerationMessages } from "../generate/systemPrompt";
-import { parseGeneratedDoc } from "../generate/parseDoc";
-import type { DocKind } from "../types/doc";
+import { buildGenerationMessages } from "./systemPrompt.js";
+import { parseGeneratedDoc } from "./parseDoc.js";
+import type { DocKind } from "./doc.js";
 
 export type GenerateBody = {
   kind?: DocKind;

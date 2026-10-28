@@ -8,7 +8,7 @@ import {
   handlePrompt,
   type GenerateBody,
   type ParseBody,
-} from "../src/server/handlers.ts";
+} from "../api/_lib/handlers.ts";
 
 function loadEnvFile(filename: string, override = false) {
   const envPath = resolve(process.cwd(), filename);
@@ -18,7 +18,7 @@ function loadEnvFile(filename: string, override = false) {
     if (!trimmed || trimmed.startsWith("#")) continue;
     const eq = trimmed.indexOf("=");
     if (eq <= 0) continue;
-    const key = trimmed.slice(0, eq).trim();
+    const key = truncatedKey(trimmed, eq);
     let value = trimmed.slice(eq + 1).trim();
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
@@ -33,7 +33,10 @@ function loadEnvFile(filename: string, override = false) {
   }
 }
 
-// Base first, then local overrides (so empty .env doesn't block .env.local)
+function truncatedKey(line: string, eq: number) {
+  return line.slice(0, eq).trim();
+}
+
 loadEnvFile(".env");
 loadEnvFile(".env.local", true);
 
