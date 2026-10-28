@@ -21,12 +21,6 @@ export type CoverConfig = {
   recipient?: string;
 };
 
-export type DocBase = {
-  kind: DocKind;
-  meta: DocMeta;
-  cover: CoverConfig;
-};
-
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type ApiParam = {
@@ -38,21 +32,10 @@ export type ApiParam = {
   example?: string;
 };
 
-export type ApiEndpointDoc = DocBase & {
-  kind: "api-endpoint";
-  endpoint: {
-    method: HttpMethod;
-    path: string;
-    summary: string;
-    description: string;
-    auth?: string;
-    baseUrl?: string;
-    params: ApiParam[];
-    requestExample?: string;
-    responseExample?: string;
-    statusCodes: { code: number; meaning: string }[];
-    notes?: string[];
-  };
+export type FlowStep = {
+  actor: string;
+  action: string;
+  detail?: string;
 };
 
 export type ChangeQa = {
@@ -60,54 +43,99 @@ export type ChangeQa = {
   answer: string;
 };
 
-export type ChangeRequestDoc = DocBase & {
-  kind: "change-request";
-  change: {
-    crId: string;
-    summary: string;
-    motivation: string;
-    scope: string[];
-    outOfScope?: string[];
-    impact: {
-      area: string;
-      level: "low" | "medium" | "high";
-      notes: string;
-    }[];
-    risks?: string[];
-    rollout?: string[];
-    qa: ChangeQa[];
-    decision?: string;
-  };
+export type ImpactRow = {
+  area: string;
+  level: "low" | "medium" | "high";
+  notes: string;
 };
 
-export type FlowStep = {
-  actor: string;
-  action: string;
-  detail?: string;
+export type EndpointSummaryRow = {
+  method: HttpMethod;
+  path: string;
+  purpose: string;
+  owner?: "nizek" | "partner" | "shared";
 };
 
-export type ApiFlowDoc = DocBase & {
-  kind: "api-flow";
-  proposal: {
-    partner: string;
-    objective: string;
-    context: string;
-    assumptions?: string[];
-    sequence: FlowStep[];
-    endpoints: {
-      method: HttpMethod;
-      path: string;
-      purpose: string;
-      owner: "nizek" | "partner" | "shared";
-    }[];
-    dataContracts?: {
-      name: string;
-      fields: { name: string; type: string; notes?: string }[];
-    }[];
-    security?: string[];
-    openQuestions?: string[];
-    nextSteps?: string[];
-  };
+/** Full HTTP endpoint block — use one section per endpoint. */
+export type EndpointSpec = {
+  method: HttpMethod;
+  path: string;
+  summary: string;
+  description?: string;
+  auth?: string;
+  baseUrl?: string;
+  params?: ApiParam[];
+  requestExample?: string;
+  responseExample?: string;
+  statusCodes?: { code: number; meaning: string }[];
+  notes?: string[];
 };
 
-export type AnyDoc = ApiEndpointDoc | ChangeRequestDoc | ApiFlowDoc;
+export type DataContract = {
+  name: string;
+  fields: { name: string; type: string; notes?: string }[];
+};
+
+type SectionBase = {
+  /** Stable key for React; optional. */
+  id?: string;
+  /** Start a new A4 page before this section. */
+  breakBefore?: boolean;
+};
+
+export type DocSection =
+  | (SectionBase & { type: "paragraph"; title?: string; body: string })
+  | (SectionBase & {
+      type: "list";
+      title: string;
+      items: string[];
+      ordered?: boolean;
+    })
+  | (SectionBase & {
+      type: "two-col-lists";
+      left: { title: string; items: string[] };
+      right: { title: string; items: string[] };
+    })
+  | (SectionBase & { type: "qa"; title?: string; items: ChangeQa[] })
+  | (SectionBase & { type: "impact"; title?: string; items: ImpactRow[] })
+  | (SectionBase & { type: "callout"; title?: string; body: string })
+  | (SectionBase & { type: "endpoint"; endpoint: EndpointSpec })
+  | (SectionBase & {
+      type: "endpoint-table";
+      title?: string;
+      rows: EndpointSummaryRow[];
+    })
+  | (SectionBase & { type: "sequence"; title?: string; steps: FlowStep[] })
+  | (SectionBase & { type: "data-contract"; contract: DataContract })
+  | (SectionBase & { type: "code"; title?: string; code: string })
+  | (SectionBase & {
+      type: "status-codes";
+      title?: string;
+      items: { code: number; meaning: string }[];
+    })
+  | (SectionBase & {
+      type: "params";
+      title?: string;
+      params: ApiParam[];
+    });
+
+/**
+ * Unified document model. `kind` is a template hint for voice/structure;
+ * content is always an ordered list of sections (any count, any mix).
+ */
+export type NizekDoc = {
+  kind: DocKind;
+  meta: DocMeta;
+  cover: CoverConfig;
+  /** Line above the title on the first content page. */
+  kicker?: string;
+  sections: DocSection[];
+};
+
+export type AnyDoc = NizekDoc;
+
+export const KIND_LABELS: Record<DocKind, string> = {
+  "api-endpoint": "API Spec",
+  "change-request": "Change Request Review",
+  "api-flow": "API Flow Proposal",
+};

@@ -1,13 +1,33 @@
 import type {
   AnyDoc,
-  ApiEndpointDoc,
-  ApiFlowDoc,
-  ChangeRequestDoc,
+  ApiParam,
+  ChangeQa,
+  DataContract,
   DocKind,
+  DocSection,
+  EndpointSpec,
+  EndpointSummaryRow,
+  FlowStep,
   HttpMethod,
+  ImpactRow,
 } from "./doc.js";
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+const SECTION_TYPES = new Set([
+  "paragraph",
+  "list",
+  "two-col-lists",
+  "qa",
+  "impact",
+  "callout",
+  "endpoint",
+  "endpoint-table",
+  "sequence",
+  "data-contract",
+  "code",
+  "status-codes",
+  "params",
+]);
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -76,120 +96,218 @@ function parseCover(raw: unknown, fallbackEnabled: boolean) {
   };
 }
 
-function parseApiEndpoint(raw: Record<string, unknown>, coverEnabled: boolean): ApiEndpointDoc {
-  if (!isObject(raw.endpoint)) throw new Error("endpoint is required.");
-  const ep = raw.endpoint;
-  const method = asString(ep.method).toUpperCase() as HttpMethod;
-  if (!METHODS.includes(method)) throw new Error(`Invalid method: ${method}`);
-  if (!Array.isArray(ep.params)) throw new Error("endpoint.params must be an array.");
-  if (!Array.isArray(ep.statusCodes)) throw new Error("endpoint.statusCodes must be an array.");
+function parseMethod(value: unknown): HttpMethod {
+  const method = asString(value).toUpperCase() as HttpMethod;
+  if (!METHODS.includes(method)) throw new Error(`Invalid method: ${method || "(empty)"}`);
+  return method;
+}
 
+function parseParams(raw: unknown): ApiParam[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isObject).map((param) => ({
+    name: asString(param.name),
+    in: asString(param.in) as ApiParam["in"],
+    type: asString(param.type),
+    required: Boolean(param.required),
+    description: asString(param.description),
+    example: asString(param.example) || undefined,
+  }));
+}
+
+function parseEndpoint(raw: unknown): EndpointSpec {
+  if (!isObject(raw)) throw new Error("endpoint object is required.");
   return {
-    kind: "api-endpoint",
-    meta: parseMeta(raw.meta),
-    cover: parseCover(raw.cover, coverEnabled),
-    endpoint: {
-      method,
-      path: asString(ep.path),
-      baseUrl: asString(ep.baseUrl) || undefined,
-      summary: asString(ep.summary),
-      description: asString(ep.description),
-      auth: asString(ep.auth) || undefined,
-      params: ep.params.filter(isObject).map((param) => ({
-        name: asString(param.name),
-        in: asString(param.in) as "path" | "query" | "header" | "body",
-        type: asString(param.type),
-        required: Boolean(param.required),
-        description: asString(param.description),
-        example: asString(param.example) || undefined,
-      })),
-      requestExample: asString(ep.requestExample) || undefined,
-      responseExample: asString(ep.responseExample) || undefined,
-      statusCodes: ep.statusCodes.filter(isObject).map((row) => ({
-        code: Number(row.code),
-        meaning: asString(row.meaning),
-      })),
-      notes: asStringArray(ep.notes),
-    },
+    method: parseMethod(raw.method),
+    path: asString(raw.path),
+    summary: asString(raw.summary),
+    description: asString(raw.description) || undefined,
+    auth: asString(raw.auth) || undefined,
+    baseUrl: asString(raw.baseUrl) || undefined,
+    params: parseParams(raw.params),
+    requestExample: asString(raw.requestExample) || undefined,
+    responseExample: asString(raw.responseExample) || undefined,
+    statusCodes: Array.isArray(raw.statusCodes)
+      ? raw.statusCodes.filter(isObject).map((row) => ({
+          code: Number(row.code),
+          meaning: asString(row.meaning),
+        }))
+      : undefined,
+    notes: asStringArray(raw.notes),
   };
 }
 
-function parseChangeRequest(raw: Record<string, unknown>, coverEnabled: boolean): ChangeRequestDoc {
-  if (!isObject(raw.change)) throw new Error("change is required.");
-  const change = raw.change;
-  if (!Array.isArray(change.scope)) throw new Error("change.scope must be an array.");
-  if (!Array.isArray(change.impact)) throw new Error("change.impact must be an array.");
-  if (!Array.isArray(change.qa)) throw new Error("change.qa must be an array.");
+function parseEndpointRows(raw: unknown): EndpointSummaryRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isObject).map((ep) => ({
+    method: parseMethod(ep.method),
+    path: asString(ep.path),
+    purpose: asString(ep.purpose),
+    owner: asString(ep.owner)
+      ? (asString(ep.owner) as EndpointSummaryRow["owner"])
+      : undefined,
+  }));
+}
 
+function parseSteps(raw: unknown): FlowStep[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isObject).map((step) => ({
+    actor: asString(step.actor),
+    action: asString(step.action),
+    detail: asString(step.detail) || undefined,
+  }));
+}
+
+function parseImpact(raw: unknown): ImpactRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isObject).map((row) => ({
+    area: asString(row.area),
+    level: asString(row.level) as ImpactRow["level"],
+    notes: asString(row.notes),
+  }));
+}
+
+function parseQa(raw: unknown): ChangeQa[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isObject).map((item) => ({
+    question: asString(item.question),
+    answer: asString(item.answer),
+  }));
+}
+
+function parseContract(raw: unknown): DataContract {
+  if (!isObject(raw)) throw new Error("data-contract.contract is required.");
   return {
-    kind: "change-request",
-    meta: parseMeta(raw.meta),
-    cover: parseCover(raw.cover, coverEnabled),
-    change: {
-      crId: asString(change.crId),
-      summary: asString(change.summary),
-      motivation: asString(change.motivation),
-      scope: asStringArray(change.scope),
-      outOfScope: asStringArray(change.outOfScope),
-      impact: change.impact.filter(isObject).map((row) => ({
-        area: asString(row.area),
-        level: asString(row.level) as "low" | "medium" | "high",
-        notes: asString(row.notes),
-      })),
-      risks: asStringArray(change.risks),
-      rollout: asStringArray(change.rollout),
-      qa: change.qa.filter(isObject).map((item) => ({
-        question: asString(item.question),
-        answer: asString(item.answer),
-      })),
-      decision: asString(change.decision) || undefined,
-    },
+    name: asString(raw.name),
+    fields: Array.isArray(raw.fields)
+      ? raw.fields.filter(isObject).map((field) => ({
+          name: asString(field.name),
+          type: asString(field.type),
+          notes: asString(field.notes) || undefined,
+        }))
+      : [],
   };
 }
 
-function parseApiFlow(raw: Record<string, unknown>, coverEnabled: boolean): ApiFlowDoc {
-  if (!isObject(raw.proposal)) throw new Error("proposal is required.");
-  const proposal = raw.proposal;
-  if (!Array.isArray(proposal.sequence)) throw new Error("proposal.sequence must be an array.");
-  if (!Array.isArray(proposal.endpoints)) throw new Error("proposal.endpoints must be an array.");
+function parseSection(raw: unknown, index: number): DocSection {
+  if (!isObject(raw)) throw new Error(`sections[${index}] must be an object.`);
+  const type = asString(raw.type);
+  if (!SECTION_TYPES.has(type)) {
+    throw new Error(`sections[${index}] has unknown type "${type}".`);
+  }
 
-  return {
-    kind: "api-flow",
-    meta: parseMeta(raw.meta),
-    cover: parseCover(raw.cover, coverEnabled),
-    proposal: {
-      partner: asString(proposal.partner),
-      objective: asString(proposal.objective),
-      context: asString(proposal.context),
-      assumptions: asStringArray(proposal.assumptions),
-      sequence: proposal.sequence.filter(isObject).map((step) => ({
-        actor: asString(step.actor),
-        action: asString(step.action),
-        detail: asString(step.detail) || undefined,
-      })),
-      endpoints: proposal.endpoints.filter(isObject).map((ep) => ({
-        method: asString(ep.method).toUpperCase() as HttpMethod,
-        path: asString(ep.path),
-        purpose: asString(ep.purpose),
-        owner: asString(ep.owner) as "nizek" | "partner" | "shared",
-      })),
-      dataContracts: Array.isArray(proposal.dataContracts)
-        ? proposal.dataContracts.filter(isObject).map((contract) => ({
-            name: asString(contract.name),
-            fields: Array.isArray(contract.fields)
-              ? contract.fields.filter(isObject).map((field) => ({
-                  name: asString(field.name),
-                  type: asString(field.type),
-                  notes: asString(field.notes) || undefined,
-                }))
-              : [],
-          }))
-        : undefined,
-      security: asStringArray(proposal.security),
-      openQuestions: asStringArray(proposal.openQuestions),
-      nextSteps: asStringArray(proposal.nextSteps),
-    },
+  const base = {
+    id: asString(raw.id) || undefined,
+    breakBefore: Boolean(raw.breakBefore) || undefined,
   };
+
+  switch (type) {
+    case "paragraph":
+      return {
+        ...base,
+        type: "paragraph",
+        title: asString(raw.title) || undefined,
+        body: asString(raw.body),
+      };
+    case "list":
+      return {
+        ...base,
+        type: "list",
+        title: asString(raw.title) || "List",
+        items: asStringArray(raw.items),
+        ordered: Boolean(raw.ordered) || undefined,
+      };
+    case "two-col-lists": {
+      const left = isObject(raw.left) ? raw.left : {};
+      const right = isObject(raw.right) ? raw.right : {};
+      return {
+        ...base,
+        type: "two-col-lists",
+        left: {
+          title: asString(left.title) || "Left",
+          items: asStringArray(left.items),
+        },
+        right: {
+          title: asString(right.title) || "Right",
+          items: asStringArray(right.items),
+        },
+      };
+    }
+    case "qa":
+      return {
+        ...base,
+        type: "qa",
+        title: asString(raw.title) || undefined,
+        items: parseQa(raw.items),
+      };
+    case "impact":
+      return {
+        ...base,
+        type: "impact",
+        title: asString(raw.title) || undefined,
+        items: parseImpact(raw.items),
+      };
+    case "callout":
+      return {
+        ...base,
+        type: "callout",
+        title: asString(raw.title) || undefined,
+        body: asString(raw.body),
+      };
+    case "endpoint":
+      return {
+        ...base,
+        type: "endpoint",
+        endpoint: parseEndpoint(raw.endpoint),
+      };
+    case "endpoint-table":
+      return {
+        ...base,
+        type: "endpoint-table",
+        title: asString(raw.title) || undefined,
+        rows: parseEndpointRows(raw.rows),
+      };
+    case "sequence":
+      return {
+        ...base,
+        type: "sequence",
+        title: asString(raw.title) || undefined,
+        steps: parseSteps(raw.steps),
+      };
+    case "data-contract":
+      return {
+        ...base,
+        type: "data-contract",
+        contract: parseContract(raw.contract),
+      };
+    case "code":
+      return {
+        ...base,
+        type: "code",
+        title: asString(raw.title) || undefined,
+        code: asString(raw.code),
+      };
+    case "status-codes":
+      return {
+        ...base,
+        type: "status-codes",
+        title: asString(raw.title) || undefined,
+        items: Array.isArray(raw.items)
+          ? raw.items.filter(isObject).map((row) => ({
+              code: Number(row.code),
+              meaning: asString(row.meaning),
+            }))
+          : [],
+      };
+    case "params":
+      return {
+        ...base,
+        type: "params",
+        title: asString(raw.title) || undefined,
+        params: parseParams(raw.params),
+      };
+    default:
+      throw new Error(`sections[${index}] unsupported type.`);
+  }
 }
 
 export function parseGeneratedDoc(
@@ -203,21 +321,17 @@ export function parseGeneratedDoc(
   if (kind !== expectedKind) {
     throw new Error(`Expected kind "${expectedKind}" but got "${kind || "missing"}".`);
   }
-
-  let doc: AnyDoc;
-  switch (kind) {
-    case "api-endpoint":
-      doc = parseApiEndpoint(data, coverEnabled);
-      break;
-    case "change-request":
-      doc = parseChangeRequest(data, coverEnabled);
-      break;
-    case "api-flow":
-      doc = parseApiFlow(data, coverEnabled);
-      break;
-    default:
-      throw new Error(`Unsupported kind: ${kind}`);
+  if (!Array.isArray(data.sections) || data.sections.length === 0) {
+    throw new Error("sections must be a non-empty array.");
   }
+
+  const doc: AnyDoc = {
+    kind,
+    meta: parseMeta(data.meta),
+    cover: parseCover(data.cover, coverEnabled),
+    kicker: asString(data.kicker) || undefined,
+    sections: data.sections.map((section, index) => parseSection(section, index)),
+  };
 
   doc.cover.enabled = coverEnabled;
   return doc;

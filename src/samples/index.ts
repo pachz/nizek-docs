@@ -16,17 +16,19 @@ export const templateOptions: {
 }[] = [
   {
     kind: "api-endpoint",
-    title: "API Endpoint",
-    description: "Method, path, params, examples, and status codes.",
+    title: "API Spec",
+    description:
+      "One or many endpoints — overview, params, examples, status codes.",
   },
   {
     kind: "change-request",
     title: "Change Request Review",
-    description: "Scope, impact, rollout, and Q&A for a CR.",
+    description: "Composable sections: scope, impact, rollout, Q&A, decision.",
   },
   {
     kind: "api-flow",
     title: "API Flow Proposal",
-    description: "Third-party sequence, contracts, and next steps.",
+    description:
+      "Sequence, multi-endpoint table, contracts, security, next steps.",
   },
 ];
