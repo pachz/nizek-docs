@@ -10,7 +10,7 @@ import {
   type ParseBody,
 } from "../src/server/handlers.ts";
 
-function loadEnvFile(filename: string) {
+function loadEnvFile(filename: string, override = false) {
   const envPath = resolve(process.cwd(), filename);
   if (!existsSync(envPath)) return;
   for (const line of readFileSync(envPath, "utf8").split("\n")) {
@@ -19,13 +19,23 @@ function loadEnvFile(filename: string) {
     const eq = trimmed.indexOf("=");
     if (eq <= 0) continue;
     const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!(key in process.env)) process.env[key] = value;
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    const existing = process.env[key];
+    if (override || existing === undefined || existing === "") {
+      process.env[key] = value;
+    }
   }
 }
 
+// Base first, then local overrides (so empty .env doesn't block .env.local)
 loadEnvFile(".env");
-loadEnvFile(".env.local");
+loadEnvFile(".env.local", true);
 
 const PORT = Number(process.env.DOCS_API_PORT ?? 8787);
 

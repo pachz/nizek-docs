@@ -117,9 +117,13 @@ export function GeneratePanel({
           prompt + schema, then an AI returns JSON the renderer understands.
         </p>
         <p className="generate-panel__health">
-          {health?.llmConfigured
-            ? `LLM ready · ${health.model}`
-            : "No API key — copy the prompt to any AI, then paste JSON below."}
+          {!health
+            ? "Checking backend…"
+            : !health.ok
+              ? "Backend unreachable — start with npm run dev (web + api)."
+              : health.llmConfigured
+                ? `LLM ready · ${health.model}`
+                : "Backend has no OPENAI_API_KEY — add it to .env.local and restart, or copy the prompt / paste JSON."}
         </p>
       </div>
 
