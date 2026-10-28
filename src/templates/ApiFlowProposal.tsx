@@ -67,12 +67,9 @@ export function ApiFlowProposalView({ doc }: { doc: ApiFlowDoc }) {
           <p className="doc-kicker">
             Partner integration · {proposal.partner} · continued
           </p>
-          <h1 className="doc-title doc-title--continued">
-            Contracts &amp; next steps
-          </h1>
+          <h1 className="doc-title doc-title--continued">Endpoints</h1>
 
           <section className="section">
-            <h2 className="section__title">Endpoints</h2>
             <div className="table-wrap">
               <table className="doc-table">
                 <thead>
@@ -141,6 +138,14 @@ export function ApiFlowProposalView({ doc }: { doc: ApiFlowDoc }) {
               </div>
             </section>
           ))}
+        </>,
+        <>
+          <p className="doc-kicker">
+            Partner integration · {proposal.partner} · continued
+          </p>
+          <h1 className="doc-title doc-title--continued">
+            Security &amp; next steps
+          </h1>
 
           {proposal.security && proposal.security.length > 0 && (
             <section className="section">
