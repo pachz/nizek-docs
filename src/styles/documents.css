@@ -1,3 +1,22 @@
+/* Offscreen measure rail for auto page packing */
+.doc-measure {
+  position: absolute;
+  left: -14000px;
+  top: 0;
+  width: var(--page-w);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.doc-measure__column {
+  width: calc(var(--page-w) - 2 * var(--page-pad-x));
+  box-sizing: border-box;
+}
+
+.doc-measure__chunk {
+  display: flow-root;
+}
+
 /* Printable A4 document surface — fixed page geometry */
 .doc-root {
   color: var(--nz-ink);
