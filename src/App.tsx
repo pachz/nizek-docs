@@ -1,18 +1,50 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DocumentRenderer } from "./components/DocumentRenderer";
 import { GeneratePanel } from "./components/GeneratePanel";
 import { Logo } from "./components/Logo";
+import { parseGeneratedDoc } from "./generate/parseDoc";
 import { samples, templateOptions } from "./samples";
 import type { AnyDoc, DocKind } from "./types/doc";
 import "./styles/app.css";
 
 type AppMode = "samples" | "generate";
 
+function readImportFromHash(): AnyDoc | null {
+  const hash = window.location.hash;
+  if (!hash.startsWith("#import=")) return null;
+  try {
+    const encoded = hash.slice("#import=".length);
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const preview = JSON.parse(json) as { kind?: DocKind; cover?: { enabled?: boolean } };
+    const kind = preview.kind;
+    if (!kind) return null;
+    const coverEnabled = preview.cover?.enabled ?? true;
+    const parsed = parseGeneratedDoc(json, kind, coverEnabled);
+    history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   const [mode, setMode] = useState<AppMode>("samples");
   const [kind, setKind] = useState<DocKind>("api-endpoint");
   const [coverEnabled, setCoverEnabled] = useState(true);
   const [generatedDoc, setGeneratedDoc] = useState<AnyDoc | null>(null);
+
+  useEffect(() => {
+    const imported = readImportFromHash();
+    if (!imported) return;
+    setKind(imported.kind);
+    setCoverEnabled(imported.cover?.enabled ?? true);
+    setGeneratedDoc(imported);
+    setMode("generate");
+  }, []);
 
   const sampleDoc: AnyDoc = useMemo(() => {
     const base = samples[kind];
