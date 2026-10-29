@@ -117,6 +117,9 @@ select {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .template-btn {

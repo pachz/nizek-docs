@@ -1,4 +1,14 @@
-export type DocKind = "api-endpoint" | "change-request" | "api-flow";
+export type DocKind =
+  | "api-endpoint"
+  | "change-request"
+  | "api-flow"
+  | "adr"
+  | "product-brief"
+  | "tech-design"
+  | "postmortem"
+  | "runbook"
+  | "security-review"
+  | "release-notes";
 
 export type DocMeta = {
   title: string;
@@ -120,8 +130,8 @@ export type DocSection =
     });
 
 /**
- * Unified document model. `kind` is a template hint for voice/structure;
- * content is always an ordered list of sections (any count, any mix).
+ * Unified document model. `kind` is only a template/voice hint for generation
+ * and chrome labels — content is always an ordered list of sections.
  */
 export type NizekDoc = {
   kind: DocKind;
@@ -138,4 +148,14 @@ export const KIND_LABELS: Record<DocKind, string> = {
   "api-endpoint": "API Spec",
   "change-request": "Change Request Review",
   "api-flow": "API Flow Proposal",
+  adr: "Architecture Decision",
+  "product-brief": "Product Brief",
+  "tech-design": "Technical Design",
+  postmortem: "Incident Postmortem",
+  runbook: "Runbook",
+  "security-review": "Security Review",
+  "release-notes": "Release Notes",
 };
+
+/** All valid kind values (for parsers / skill sync). */
+export const DOC_KINDS = Object.keys(KIND_LABELS) as DocKind[];

@@ -69,10 +69,25 @@ npx vercel --prod   # production
 - Official wordmark SVGs: `public/nizek-logo.svg` (ink) and `public/nizek-logo-white.svg` (covers)
 - Display / UI: Outfit · Body: Source Serif 4 · Code: IBM Plex Mono
 
+## Cursor skill (any project)
+
+A personal Cursor skill packages the same schema + a local JSON→PDF renderer so other repos can say “generate a Nizek document” without running this app:
+
+- Skill path: `~/.cursor/skills/nizek-docs/` (`SKILL.md`, `schema.md`, `scripts/render.mjs`)
+- Linked here as `.cursor/skills/nizek-docs` for this repo
+
+```bash
+node ~/.cursor/skills/nizek-docs/scripts/render.mjs \
+  --in docs/generated/example.json \
+  --out docs/generated/example.pdf
+```
+
+Requires local Chrome/Edge for PDF (HTML is always written alongside).
+
 ## Extending
 
-1. Add a type in `src/types/doc.ts`
+1. Add a type in `api/_lib/doc.ts` (and keep the skill `schema.md` in sync)
 2. Add a sample in `src/samples/`
-3. Add a view in `src/templates/`
-4. Update `src/generate/systemPrompt.ts` + `parseDoc.ts`
-5. Wire it in `DocumentRenderer` and `templateOptions`
+3. Section rendering lives in `src/templates/`
+4. Update `api/_lib/systemPrompt.ts` + `parseDoc.ts`
+5. Update `~/.cursor/skills/nizek-docs/schema.md` when the schema changes

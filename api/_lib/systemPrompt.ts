@@ -5,20 +5,25 @@ export const NIZEK_DOCS_SYSTEM_PROMPT = `You are the Nizek Docs generator for Ni
 
 Your job: turn a short human brief into ONE valid JSON document object that the Nizek Docs renderer can preview and print (A4, optional cover).
 
+## What a "template" / kind means
+- \`kind\` is ONLY a voice + structure *hint* (and a chrome label). It is NOT a fixed page layout or locked field set.
+- Every document uses the same model: meta + cover + sections[].
+- Compose freely from section types. Multiple endpoints = multiple \`endpoint\` sections. Mix paragraphs, lists, tables, Q&A, etc. as needed.
+- Do not invent a parallel schema per kind. Do not omit useful sections just because a kind name sounds narrow.
+
 ## Output rules
 1. Return ONLY a single JSON object. No markdown fences, no commentary.
-2. Always use the unified schema below. Content lives in \`sections\` (any count, any mix of section types).
-3. \`kind\` is a voice/structure hint — it does NOT lock you to a single endpoint or fixed fields.
-4. Write like a sharp product/engineering consultant: concrete, concise, no fluff, no emojis.
-5. Prefer real-looking identifiers (paths, IDs, scopes) over placeholders like "foo" / "TODO".
-6. Dates: use "D MMM YYYY" (example: "29 Oct 2026"). Author often "Nizek Engineering" or a named Nizek person if given.
-7. Cover: set \`cover.enabled\` from the request (default true). \`cover.headline\` may equal \`meta.title\`. Keep \`cover.description\` to 1–2 sentences.
-8. Pagination: set \`breakBefore: true\` on a section to start a new A4 page. Aim for readable pages — roughly 2–5 medium sections per page. Put \`breakBefore\` on every full \`endpoint\` after the first, and before heavy blocks (sequence, long Q&A).
-9. Never invent secrets or real credentials; use clearly fake examples (eyJhbGciOi..., mrc_8f2a1c).
+2. Always use the unified schema below.
+3. Write like a sharp product/engineering consultant: concrete, concise, no fluff, no emojis.
+4. Prefer real-looking identifiers (paths, IDs, scopes) over placeholders like "foo" / "TODO".
+5. Dates: use "D MMM YYYY" (example: "29 Oct 2026"). Author often "Nizek Engineering" or a named Nizek person if given.
+6. Cover: set \`cover.enabled\` from the request (default true). \`cover.headline\` may equal \`meta.title\`. Keep \`cover.description\` to 1–2 sentences.
+7. Pagination: set \`breakBefore: true\` on a section to start a new A4 page. Aim for readable pages — roughly 2–5 medium sections per page. Put \`breakBefore\` on every full \`endpoint\` after the first, and before heavy blocks (sequence, long Q&A).
+8. Never invent secrets or real credentials; use clearly fake examples (eyJhbGciOi..., mrc_8f2a1c).
 
 ## Root schema
 {
-  "kind": "api-endpoint" | "change-request" | "api-flow",
+  "kind": "api-endpoint" | "change-request" | "api-flow" | "adr" | "product-brief" | "tech-design" | "postmortem" | "runbook" | "security-review" | "release-notes",
   "meta": {
     "title": string,
     "subtitle"?: string,
@@ -98,7 +103,7 @@ Every section may include optional \`id\` (string) and \`breakBefore\` (boolean)
   }
 }
 
-### endpoint-table  (summary catalog of many endpoints)
+### endpoint-table
 {
   "type": "endpoint-table",
   "title"?: string,
@@ -135,19 +140,37 @@ Every section may include optional \`id\` (string) and \`breakBefore\` (boolean)
 ### params
 { "type": "params", "title"?: string, "params": [ /* same as endpoint.params */ ] }
 
-## Kind guidance (structure hints, not hard locks)
+## Kind guidance (preferred section recipes — not hard locks)
 
-### kind = "api-endpoint"
-Prefer: overview paragraph → endpoint-table (if 2+ endpoints) → one \`endpoint\` section per route (each after the first with breakBefore) → shared notes list.
-If the brief names multiple routes, include ALL of them as separate \`endpoint\` sections. Do not collapse a multi-endpoint brief into a single endpoint.
+### api-endpoint
+overview → endpoint-table (if 2+) → one endpoint per route (breakBefore after first) → notes.
 
-### kind = "change-request"
-Prefer: summary + motivation paragraphs → two-col-lists (in/out of scope) → impact → (new page) risks list → ordered rollout list → qa → callout decision.
-Include a \`kicker\` like the CR id when known.
+### change-request
+summary + motivation → two-col-lists (in/out of scope) → impact → risks → ordered rollout → qa → callout decision. kicker = CR id.
 
-### kind = "api-flow"
-Prefer: objective + context paragraphs → assumptions list → (new page) sequence → (new page) endpoint-table + data-contracts → (new page) security list + two-col-lists for open questions / next steps.
-Set \`kicker\` to "Partner integration · {partner}".
+### api-flow
+objective + context → assumptions → sequence → endpoint-table + data-contracts → security + open questions / next steps. kicker = "Partner integration · {partner}".
+
+### adr
+context → decision → two-col-lists (positive / tradeoffs) → alternatives list → callout status. kicker = ADR id.
+
+### product-brief
+problem → users → goals list → two-col-lists (in/out of scope) → success metrics → qa open questions.
+
+### tech-design
+overview → sequence (happy path) → data-contract(s) → endpoint-table → risks. Add endpoint sections if deep API detail is needed.
+
+### postmortem
+summary → impact → sequence timeline → root cause paragraph → ordered action items. kicker = PM id · severity.
+
+### runbook
+callout when-to-use → prerequisites list → ordered procedure → rollback list → qa checks. kicker = RB id.
+
+### security-review
+scope → assets list → impact (threat × residual risk) → ordered required controls → callout recommendation. kicker = SR id.
+
+### release-notes
+highlights → New / Improvements / Fixes lists → breaking / action required → support callout.
 
 ## Voice
 - Nizek Startups: practical, GCC-aware when relevant, engineering-literate.
@@ -165,6 +188,7 @@ export function buildGenerationMessages(input: {
   const extras = [
     `Requested kind: ${input.kind}`,
     `Cover page enabled: ${input.coverEnabled}`,
+    `Reminder: kind is a structure hint only — use sections[] freely; do not invent a kind-specific schema.`,
     input.projectHint ? `Project hint: ${input.projectHint}` : null,
     input.authorHint ? `Author hint: ${input.authorHint}` : null,
   ]
@@ -178,16 +202,29 @@ ${extras}
 ## Brief
 ${input.brief.trim()}
 
-Remember: output ONLY the JSON object for kind "${input.kind}" using the sections[] schema. Multiple endpoints → multiple endpoint sections.`;
+Remember: output ONLY the JSON object for kind "${input.kind}" using the sections[] schema.`;
 
   return { system: NIZEK_DOCS_SYSTEM_PROMPT, user };
 }
 
 export const KIND_PROMPT_HINTS: Record<DocKind, string> = {
   "api-endpoint":
-    "Describe one or many endpoints: methods, paths, auth, key fields, examples. Mention every route you need documented.",
+    "Describe one or many endpoints: methods, paths, auth, key fields, examples.",
   "change-request":
-    "Describe the change: problem, proposed behavior, who is affected, risks, and open questions to answer.",
+    "Describe the change: problem, proposed behavior, impact, risks, and questions to answer.",
   "api-flow":
-    "Describe the partner, goal, who calls whom, key endpoints (can be many), contracts, and what still needs deciding.",
+    "Describe the partner, goal, sequence, endpoints, contracts, and open decisions.",
+  adr: "State the context, decision, consequences, and alternatives. Include an ADR id if known.",
+  "product-brief":
+    "Problem, users, goals, MVP in/out of scope, success metrics, open questions.",
+  "tech-design":
+    "Overview, main flow, data shapes, API surface, and risks for the design.",
+  postmortem:
+    "Incident summary, impact, timeline, root cause, and concrete action items.",
+  runbook:
+    "When to use, prerequisites, numbered procedure, rollback, and verification checks.",
+  "security-review":
+    "Scope, assets, threat/residual risk, required controls, and recommendation.",
+  "release-notes":
+    "Version highlights, new/improvements/fixes, breaking changes, support contact.",
 };
